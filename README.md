@@ -1,1 +1,2 @@
-# CMPE273-Week1-Lab1
+# CMPE 273 Week 1 Lab 1: Two HTTP Services
+

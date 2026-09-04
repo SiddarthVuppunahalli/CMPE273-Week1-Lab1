@@ -8,14 +8,16 @@ import (
 )
 
 func health(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	log.Printf("service=A endpoint=/health status=200 latency_ms=%d", time.Since(start).Milliseconds())
 }
 
 func echo(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	msg := r.URL.Query().Get("msg")
 	_ = json.NewEncoder(w).Encode(map[string]string{"echo": msg})
-	log.Printf("service=A endpoint=/echo status=ok latency_ms=%d", time.Since(start).Milliseconds())
+	log.Printf("service=A endpoint=/echo status=200 latency_ms=%d", time.Since(start).Milliseconds())
 }
 
 func main() {

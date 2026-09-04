@@ -5,29 +5,32 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 )
 
 var client = &http.Client{Timeout: 1 * time.Second}
 
 func health(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	log.Printf("service=B endpoint=/health status=200 latency_ms=%d", time.Since(start).Milliseconds())
 }
 
 func callEcho(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	msg := r.URL.Query().Get("msg")
 
-	url := fmt.Sprintf("http://127.0.0.1:8080/echo?msg=%s", msg)
-	resp, err := client.Get(url)
+	serviceAURL := fmt.Sprintf("http://127.0.0.1:8080/echo?msg=%s", url.QueryEscape(msg))
+	resp, err := client.Get(serviceAURL)
 	if err != nil {
-		log.Printf("service=B endpoint=/call-echo status=error error=%q latency_ms=%d", err.Error(), time.Since(start).Milliseconds())
 		w.WriteHeader(http.StatusServiceUnavailable)
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"service_b": "ok",
 			"service_a": "unavailable",
 			"error":     err.Error(),
 		})
+		log.Printf("service=B endpoint=/call-echo status=503 error=%q latency_ms=%d", err.Error(), time.Since(start).Milliseconds())
 		return
 	}
 	defer resp.Body.Close()
@@ -35,11 +38,11 @@ func callEcho(w http.ResponseWriter, r *http.Request) {
 	var data map[string]any
 	_ = json.NewDecoder(resp.Body).Decode(&data)
 
-	log.Printf("service=B endpoint=/call-echo status=ok latency_ms=%d", time.Since(start).Milliseconds())
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"service_b": "ok",
 		"service_a": data,
 	})
+	log.Printf("service=B endpoint=/call-echo status=200 latency_ms=%d", time.Since(start).Milliseconds())
 }
 
 func main() {
